@@ -9,7 +9,7 @@
 <body>
     <h1>Telegram Bot Running...</h1>
     <script>
-        const TELEGRAM_TOKEN = "7716308655:AAGcwNN-3Qd1Ya-Ua_7hjiXdObLon-uVKL8"; // توکن از @BotFather
+        const TELEGRAM_TOKEN = "7716308655:AAGcwNN-3Qd1Ya-Ua_7hjiXdObLon-uVKL8";
         const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
         const NOTES = {
@@ -32,7 +32,7 @@
         bot.on('callback_query', (query) => {
             const chatId = query.message.chat.id;
             if (query.data === "get_note") {
-                bot.sendMessage(chatId, "اسم درس رو بنویس (مثل ریاضی، فیزیک)");
+                bot.sendMessage(chatId, "اسم درس رو بنویس (مثل ژئودزی ماهواره ای، فتوگرامتری بردکوتاه)");
                 bot.setChatData(chatId, { mode: "note" });
             } else if (query.data === "chat_deepseek") {
                 bot.sendMessage(chatId, "سؤالت رو بپرس!");
@@ -54,14 +54,14 @@
                         return;
                     }
                 }
-                const prompt = `پیام کاربر: "${userMessage}"\nاگر پیام درخواست جزوه برای یکی از درس‌های (ریاضی، فیزیک، شیمی) است، فقط نام درس را برگردان یا بنویس 'نامعلوم'.`;
+                const prompt = `پیام کاربر: "${userMessage}"\nاگر پیام درخواست جزوه برای یکی از درس‌های (ژئودزی ماهواره ای، فتوگرامتری بردکوتاه، زیرسازی روسازی) است، فقط نام درس را برگردان یا بنویس 'نامعلوم'.`;
                 try {
                     const response = await puter.ai.chat({ model: 'deepseek/r1', messages: [{ role: 'user', content: prompt }] });
                     const result = response.message.content;
                     if (NOTES[result]) {
                         bot.sendDocument(chatId, NOTES[result].file_id, { caption: `جزوه ${result}` });
                     } else {
-                        bot.sendMessage(chatId, "درس پیدا نشد. لطفاً واضح بنویس (مثل ریاضی، فیزیک).");
+                        bot.sendMessage(chatId, "درس پیدا نشد. لطفاً واضح بنویس (مثل ژئودزی ماهواره ای، فتوگرامتری بردکوتاه).");
                     }
                 } catch (error) {
                     bot.sendMessage(chatId, "خطا در اتصال به هوش مصنوعی. دوباره امتحان کن!");
