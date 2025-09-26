@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Telegram Bot</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="https://unpkg.com/node-telegram-bot-api@0.66.0/lib/node-telegram-bot-api.min.js"></script>
+</head>
+<body>
+    <h1>Telegram Bot Running...</h1>
+    <script>
+        const TELEGRAM_TOKEN = "7716308655:AAGcwNN-3Qd1Ya-Ua_7hjiXdObLon-uVKL8"; // توکن از @BotFather
+        const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+
+        const NOTES = {
+            " ژئودزی ماهواره ای": { file_id: "https://t.me/GeomaticsWith_SCh/62", keywords: ["ژئودزی", "ژئودزی ماهواره ای", "satlitegeodesy"] },
+            "فتوگرامتری بردکوتاه": { file_id: "https://t.me/GeomaticsWith_SCh/60", keywords: ["فتوگرامتری", "Photogerametery", "فتوگرامتری برد کوتاه"] },
+            "زیرسازی روسازی": { file_id: "https://t.me/GeomaticsWith_SCh/56", keywords: ["زیر سازی"] }
+        };
+
+        bot.onText(/\/start/, (msg) => {
+            const chatId = msg.chat.id;
+            const keyboard = {
+                inline_keyboard: [
+                    [{ text: "گرفتن جزوه", callback_data: "get_note" }],
+                    [{ text: "چت با DeepSeek", callback_data: "chat_deepseek" }]
+                ]
+            };
+            bot.sendMessage(chatId, "سلام! یکی از گزینه‌ها رو انتخاب کن یا مستقیم پیام بنویس:", { reply_markup: keyboard });
+        });
+
+        bot.on('callback_query', (query) => {
+            const chatId = query.message.chat.id;
+            if (query.data === "get_note") {
+                bot.sendMessage(chatId, "اسم درس رو بنویس (مثل ریاضی، فیزیک)");
+                bot.setChatData(chatId, { mode: "note" });
+            } else if (query.data === "chat_deepseek") {
+                bot.sendMessage(chatId, "سؤالت رو بپرس!");
+                bot.setChatData(chatId, { mode: "chat" });
+            }
+            bot.answerCallbackQuery(query.id);
+        });
+
+        bot.on('message', async (msg) => {
+            if (msg.text.startsWith('/')) return;
+            const chatId = msg.chat.id;
+            const userMessage = msg.text.toLowerCase();
+            const userData = bot.getChatData(chatId) || { mode: "auto" };
+
+            if (userData.mode === "note" || userMessage.startsWith('جزوه')) {
+                for (const [lesson, data] of Object.entries(NOTES)) {
+                    if (data.keywords.some(keyword => userMessage.includes(keyword))) {
+                        bot.sendDocument(chatId, data.file_id, { caption: `جزوه ${lesson}` });
+                        return;
+                    }
+                }
+                const prompt = `پیام کاربر: "${userMessage}"\nاگر پیام درخواست جزوه برای یکی از درس‌های (ریاضی، فیزیک، شیمی) است، فقط نام درس را برگردان یا بنویس 'نامعلوم'.`;
+                try {
+                    const response = await puter.ai.chat({ model: 'deepseek/r1', messages: [{ role: 'user', content: prompt }] });
+                    const result = response.message.content;
+                    if (NOTES[result]) {
+                        bot.sendDocument(chatId, NOTES[result].file_id, { caption: `جزوه ${result}` });
+                    } else {
+                        bot.sendMessage(chatId, "درس پیدا نشد. لطفاً واضح بنویس (مثل ریاضی، فیزیک).");
+                    }
+                } catch (error) {
+                    bot.sendMessage(chatId, "خطا در اتصال به هوش مصنوعی. دوباره امتحان کن!");
+                }
+                return;
+            }
+
+            try {
+                const response = await puter.ai.chat({ model: 'deepseek/r1', messages: [{ role: 'user', content: userMessage }] });
+                bot.sendMessage(chatId, response.message.content);
+            } catch (error) {
+                bot.sendMessage(chatId, "خطا در اتصال به هوش مصنوعی. دوباره امتحان کن!");
+            }
+        });
+
+        const chatData = {};
+        bot.setChatData = (chatId, data) => {
+            chatData[chatId] = data;
+        };
+        bot.getChatData = (chatId) => {
+            return chatData[chatId] || {};
+        };
+
+        console.log("ربات شروع شد...");
+    </script>
+</body>
+</html>
